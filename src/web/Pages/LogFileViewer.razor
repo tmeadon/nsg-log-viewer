@@ -1,0 +1,125 @@
+@using System.Text.Json;
+@page "/fileviewer"
+
+<PageTitle>File Viewer</PageTitle>
+
+<h1>File Viewer</h1>
+
+<InputFile OnChange="@LoadFilesAsync" multiple>Upload json file(s)</InputFile>
+
+@if (errors.Count > 0)
+{
+    <p>Errors:</p>
+    <ul>
+        @foreach (var error in errors)
+        {
+            <li>@error</li>
+        }
+    </ul>
+}
+
+@if (isLoading)
+{
+    <p>Loading files...</p>
+}
+else 
+{
+    <p>Files:</p>
+    <ul>
+        @foreach (var file in files)
+        {
+            <li>
+                <ul>
+                    <li>Name: @file.Name</li>
+                    <li>Last modified: @file.LastModified.ToString()</li>
+                    <li>Size (bytes): @file.Size</li>
+                    <li>Content type: @file.ContentType</li>
+                </ul>
+            </li>
+        }
+    </ul>
+
+    @if (flows.Count > 0)
+    {
+        <p>Flows:</p>
+
+        <table>
+            <th>Time</th>
+            <th>MacAddress</th>
+            <th>ResourceId</th>
+            <th>SourceAddress</th>
+            <th>SourcePort</th>
+            <th>DestinationAddress</th>
+            <th>DestinationPort</th>
+            <th>Options</th>
+            @foreach (var flow in flows)
+            {
+                <tr>
+                    <td>@flow.Time</td>
+                    <td>@flow.MacAddress</td>
+                    <td>@flow.ResourceId</td>
+                    <td>@flow.SourceAddress</td>
+                    <td>@flow.SourcePort</td>
+                    <td>@flow.DestinationAddress</td>
+                    <td>@flow.DestinationPort</td>
+                    <td>@flow.Options</td>
+                </tr>
+            }
+        </table>
+    }
+
+    @foreach (var str in fileContents) 
+    {
+        <p>@str</p>
+    }
+}
+
+
+
+@code {
+    private List<string> fileContents = new();
+    private List<IBrowserFile> files = new();
+    private bool isLoading = false;
+    private List<string> errors = new();
+    private List<Flow> flows = new();
+
+    private async Task LoadFilesAsync(InputFileChangeEventArgs e)
+    {
+        isLoading = true;
+        errors = new();
+
+        foreach (var file in e.GetMultipleFiles())
+        {
+            if (file.ContentType == "application/json")
+            {
+                files.Add(file);
+
+                // var stream = file.OpenReadStream();
+                // var fileContents = await new StreamReader(stream).ReadToEndAsync();
+                // this.fileContents.Add(fileContents);
+                // var flowLogFile = await JsonSerializer.DeserializeAsync<FlowLogFile>(stream);
+                // var flowLogFile = JsonSerializer.Deserialize<FlowLogFile>(fileContents, new JsonSerializerOptions { PropertyNameCaseInsensitive = true });
+                
+                var flowLogFile = await JsonSerializer.DeserializeAsync<FlowLogFile>(file.OpenReadStream(), new JsonSerializerOptions { PropertyNameCaseInsensitive = true });
+                
+                if (flowLogFile != null)
+                {
+                    Console.WriteLine("flowLogFileRecordCount: " + flowLogFile.Records.Count);
+                    var fileFlows = FlowParser.Parse(flowLogFile);
+                    flows.AddRange(FlowParser.Parse(flowLogFile));
+                    Console.WriteLine($"num flows: {flows.Count}");
+                }
+                else
+                {
+                    errors.Add($"File {file.Name} is not a valid FlowLogFile");
+                }
+            }
+            else 
+            {
+                errors.Add($"{file.Name} is not a json file");
+            }
+        }
+        
+        isLoading = false;
+    }
+}

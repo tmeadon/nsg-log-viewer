@@ -1,3 +1,6 @@
+global using System.Net;
+global using NsgLogViewer.Models;
+global using NsgLogViewer.Services;
 using Microsoft.AspNetCore.Components.Web;
 using Microsoft.AspNetCore.Components.WebAssembly.Hosting;
 using NsgLogViewer;
