@@ -22,6 +22,7 @@ div.file-loaded span, div.file-loading span {
     display: table-cell;
     vertical-align: middle;
     text-align: center;
+    font-size: 0.8em;
 }
 
 i.loaded-icon {
@@ -34,3 +35,6 @@ i.loaded-icon {
     margin-top: 10%;
 }
 
+div.w-100 {
+    height: 1rem;
+}
