@@ -3,9 +3,9 @@ namespace NsgLogViewer.Models;
 public class FlowTuple
 {
     public string Id { get; init; } = "";
-    public IPAddress SourceAddress { get; init; } = IPAddress.None;
+    public string SourceAddress { get; init; } = "";
     public int SourcePort { get; init; }
-    public IPAddress DestinationAddress { get; init; } = IPAddress.None;
+    public string DestinationAddress { get; init; } = "";
     public int DestinationPort { get; init; }
     public string Options { get; init; } = "";
 
@@ -16,8 +16,8 @@ public class FlowTuple
         return new FlowTuple
         {
             Id = elements[0],
-            SourceAddress = IPAddress.Parse(elements[1]),
-            DestinationAddress = IPAddress.Parse(elements[2]),
+            SourceAddress = elements[1],
+            DestinationAddress = elements[2],
             SourcePort = int.Parse(elements[3]),
             DestinationPort = int.Parse(elements[4]),
             Options = string.Join(",", elements.Skip(5))

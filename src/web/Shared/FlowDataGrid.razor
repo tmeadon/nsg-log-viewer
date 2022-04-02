@@ -1,0 +1,21 @@
+<RadzenDataGrid AllowFiltering="true" AllowColumnResize="true" FilterMode="FilterMode.Advanced" AllowSorting="true"
+    PageSize="50" AllowPaging="true" PagerHorizontalAlign="HorizontalAlign.Left" ShowPagingSummary="true" Data="@Flows"
+    TItem="Flow" ColumnWidth="300px" LogicalFilterOperator="LogicalFilterOperator.And" AllowColumnReorder="true"
+    FilterCaseSensitivity="FilterCaseSensitivity.CaseInsensitive" class="flow-log-table" AllowMultiColumnSorting="false" >
+    <Columns>
+        <RadzenDataGridColumn TItem="Flow" Property="Time" Title="time" Width="150px" />
+        <RadzenDataGridColumn TItem="Flow" Property="SourceAddress" Title="src_addr" Width="125px" />
+        <RadzenDataGridColumn TItem="Flow" Property="SourcePort" Title="src_port" Width="125px" />
+        <RadzenDataGridColumn TItem="Flow" Property="DestinationAddress" Title="dst_addr" Width="125px" />
+        <RadzenDataGridColumn TItem="Flow" Property="DestinationPort" Title="dst_port" Width="125px" />
+        <RadzenDataGridColumn TItem="Flow" Property="MacAddress" Title="mac_addr" Width="150px" />
+        <RadzenDataGridColumn TItem="Flow" Property="NsgName" Title="nsg" Width="200px" />
+        <RadzenDataGridColumn TItem="Flow" Property="RuleName" Title="rule" Width="200px" />
+        <RadzenDataGridColumn TItem="Flow" Property="Options" Title="options" Width="165px" />
+    </Columns>
+</RadzenDataGrid>
+
+@code {
+    [Parameter]
+    public List<Flow> Flows { get; set; } = new();
+}
