@@ -24,6 +24,8 @@ else
                     <li>Last modified: @file.LastModified.ToString()</li>
                     <li>Size (bytes): @file.Size</li>
                     <li>Content type: @file.ContentType</li>
+                    <li>Hash code: @file.GetHashCode()</li>
+                    <li><RadzenButton Click="@(args => RemoveFile(file.GetHashCode()))" Text="Remove" /></li>
                 </ul>
             </li>
         }
@@ -52,13 +54,13 @@ else
             {
                 files.Add(file);
 
+                var fileHashCode = file.GetHashCode();
                 var readStream = file.OpenReadStream(maxAllowedSize: maxAllowedSize);
                 var flowLogFile = await JsonSerializer.DeserializeAsync<FlowLogFile>(readStream, new JsonSerializerOptions { PropertyNameCaseInsensitive = true });
                 
                 if (flowLogFile != null)
                 {
-                    var fileFlows = FlowParser.Parse(flowLogFile);
-                    flows.AddRange(FlowParser.Parse(flowLogFile));
+                    flows.AddRange(FlowParser.Parse(flowLogFile, fileHashCode));
                 }
                 else
                 {
@@ -87,5 +89,12 @@ else
                 Duration = 8000
             });
         }
+    }
+
+    private void RemoveFile(int browserFileHashCode)
+    {
+        files.RemoveAll(f => f.GetHashCode() == browserFileHashCode);
+        flows.RemoveAll(f => f.BrowserFileHashCode == browserFileHashCode);
+        StateHasChanged();
     }
 }

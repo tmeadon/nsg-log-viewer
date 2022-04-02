@@ -1,4 +1,4 @@
-<RadzenDataGrid AllowFiltering="true" AllowColumnResize="true" FilterMode="FilterMode.Advanced" AllowSorting="true"
+<RadzenDataGrid @ref="grid" AllowFiltering="true" AllowColumnResize="true" FilterMode="FilterMode.Advanced" AllowSorting="true"
     PageSize="50" AllowPaging="true" PagerHorizontalAlign="HorizontalAlign.Left" ShowPagingSummary="true" Data="@Flows"
     TItem="Flow" ColumnWidth="300px" LogicalFilterOperator="LogicalFilterOperator.And" AllowColumnReorder="true"
     FilterCaseSensitivity="FilterCaseSensitivity.CaseInsensitive" class="flow-log-table" AllowMultiColumnSorting="false" >
@@ -18,4 +18,11 @@
 @code {
     [Parameter]
     public List<Flow> Flows { get; set; } = new();
+    
+    private RadzenDataGrid<Flow> grid = new RadzenDataGrid<Flow>();
+
+    protected override void OnParametersSet()
+    {
+        grid.Reload();
+    }
 }

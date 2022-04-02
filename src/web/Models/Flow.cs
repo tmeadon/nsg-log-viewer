@@ -11,4 +11,5 @@ public class Flow
     public string DestinationAddress { get; init; } = "";
     public int DestinationPort { get; init; }
     public string Options { get; init; } = "";
+    public int? BrowserFileHashCode { get; init; }
 }

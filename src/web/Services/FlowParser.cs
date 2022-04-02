@@ -2,7 +2,7 @@ namespace NsgLogViewer.Services;
 
 public static class FlowParser
 {
-    public static IEnumerable<Flow> Parse(FlowLogFile flowLogFile)
+    public static IEnumerable<Flow> Parse(FlowLogFile flowLogFile, int? browserFileHashCode)
     {
         var flows = new List<Flow>();
 
@@ -26,7 +26,8 @@ public static class FlowParser
                             SourcePort = thisFlowTuple.SourcePort,
                             DestinationAddress = thisFlowTuple.DestinationAddress,
                             DestinationPort = thisFlowTuple.DestinationPort,
-                            Options = thisFlowTuple.Options
+                            Options = thisFlowTuple.Options,
+                            BrowserFileHashCode = browserFileHashCode
                         };
 
                         flows.Add(flow);
