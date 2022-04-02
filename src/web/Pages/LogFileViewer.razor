@@ -8,7 +8,7 @@
 
 <InputFile OnChange="@LoadFilesAsync" multiple>Upload json file(s)</InputFile>
 
-@if (isLoading)
+@if (isLoading && !flows.Any())
 {
     <p>Loading files...</p>
 }
