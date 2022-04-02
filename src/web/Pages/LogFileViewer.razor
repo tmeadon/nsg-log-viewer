@@ -8,14 +8,25 @@
 
 <InputFile OnChange="@LoadFilesAsync" multiple>Upload json file(s)</InputFile>
 
-<LoadedFileGrid Files="@files" FileRemoved="@RemoveFile" />
+@if (files.Count > 0)
+{
+    <LoadedFileGrid Files="@files" FileRemoved="RemoveFile" />
 
-<EventTimeChart EventTimes="@flows.Select(f => f.Time)" />
+    <EventTimeChart EventTimes="@flows.Select(f => f.Time)" />
 
-<FlowDataGrid Flows="@flows" />
+    <div class="chart-grid-spacer"></div>
+
+    <FlowDataGrid Flows="@flows" />
+}
+else
+{
+    <div id="no-files-div">
+        <span>Upload a file to get started!</span>
+    </div>
+}
 
 @code {
-    private List<LoadedFile> files = new();
+    private List<LoadedFile> files = new List<LoadedFile>();
     private List<string> errors = new();
     private List<Flow> flows = new();
     private long maxAllowedSize = 1024 * 1024 * 10; // 10 MB
@@ -23,33 +34,15 @@
     private async Task LoadFilesAsync(InputFileChangeEventArgs e)
     {
         errors = new();
+        var browserFiles = e.GetMultipleFiles();
+        var filteredFiles = FilterFilesAndNotifyErrors(browserFiles);
+        AddLoadedFiles(filteredFiles);
 
-        foreach (var file in e.GetMultipleFiles())
+        foreach (var file in filteredFiles)
         {
-            if (file.ContentType == "application/json")
+            if (IsFileJson(file))
             {
-                var fileHashCode = file.GetHashCode();
-
-                files.Add(new LoadedFile {
-                    FileName = file.Name,
-                    IsLoading = true,
-                    Size = file.Size,
-                    BrowserFileHashCode = fileHashCode 
-                });
-
-                var readStream = file.OpenReadStream(maxAllowedSize: maxAllowedSize);
-                var flowLogFile = await JsonSerializer.DeserializeAsync<FlowLogFile>(readStream, new JsonSerializerOptions { PropertyNameCaseInsensitive = true });
-                
-                if (flowLogFile != null)
-                {
-                    flows.AddRange(FlowParser.Parse(flowLogFile, fileHashCode));
-                }
-                else
-                {
-                    errors.Add($"File {file.Name} is not a valid FlowLogFile");
-                }
-
-                files.Where(f => f.BrowserFileHashCode == fileHashCode).First().IsLoading = false;
+                await LoadFileAsync(file);
             }
             else 
             {
@@ -60,18 +53,62 @@
         SendErrorNotifications();
     }
 
+    private IEnumerable<IBrowserFile> FilterFilesAndNotifyErrors(IEnumerable<IBrowserFile> files)
+    {
+        files.Where(f => !IsFileJson(f)).ToList().ForEach(f => SendErrorNotification($"{f.Name} is not a json file"));
+        return files.Where(f => IsFileJson(f));
+    }
+
+    private void AddLoadedFiles(IEnumerable<IBrowserFile> browserFiles)
+    {
+        foreach (var file in browserFiles)
+        {
+            files.Add(new LoadedFile {
+                FileName = file.Name,
+                IsLoading = true,
+                Size = file.Size,
+                BrowserFileHashCode = file.GetHashCode()
+            });
+        }
+    }
+
+    private bool IsFileJson(IBrowserFile file) => file.ContentType == "application/json";
+
+    private async Task LoadFileAsync(IBrowserFile browserFile)
+    {
+        var fileHashCode = browserFile.GetHashCode();
+        var readStream = browserFile.OpenReadStream(maxAllowedSize: maxAllowedSize);
+        var flowLogFile = await JsonSerializer.DeserializeAsync<FlowLogFile>(readStream, new JsonSerializerOptions { PropertyNameCaseInsensitive = true });
+        
+        if (flowLogFile != null)
+        {
+            flows.AddRange(FlowParser.Parse(flowLogFile, fileHashCode));
+        }
+        else
+        {
+            errors.Add($"File {browserFile.Name} is not a valid FlowLogFile");
+        }
+
+        files.Where(f => f.BrowserFileHashCode == fileHashCode).First().IsLoading = false;
+    }
+
     private void SendErrorNotifications()
     {
         foreach (var error in errors)
         {
-            notificationService.Notify(new NotificationMessage
-            {
-                Severity = NotificationSeverity.Error,
-                Detail = error,
-                Summary = "Error loading file",
-                Duration = 8000
-            });
+            SendErrorNotification(error);
         }
+    }
+
+    private void SendErrorNotification(string error)
+    {
+        notificationService.Notify(new NotificationMessage
+        {
+            Severity = NotificationSeverity.Error,
+            Detail = error,
+            Summary = "Error loading file",
+            Duration = 8000
+        });
     }
 
     private void RemoveFile(LoadedFile file)
