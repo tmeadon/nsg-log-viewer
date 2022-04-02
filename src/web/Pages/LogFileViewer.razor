@@ -8,53 +8,35 @@
 
 <InputFile OnChange="@LoadFilesAsync" multiple>Upload json file(s)</InputFile>
 
-@if (isLoading && !flows.Any())
-{
-    <p>Loading files...</p>
-}
-else 
-{
-    <p>Files:</p>
-    <ul>
-        @foreach (var file in files)
-        {
-            <li>
-                <ul>
-                    <li>Name: @file.Name</li>
-                    <li>Last modified: @file.LastModified.ToString()</li>
-                    <li>Size (bytes): @file.Size</li>
-                    <li>Content type: @file.ContentType</li>
-                    <li>Hash code: @file.GetHashCode()</li>
-                    <li><RadzenButton Click="@(args => RemoveFile(file.GetHashCode()))" Text="Remove" /></li>
-                </ul>
-            </li>
-        }
-    </ul>
+<LoadedFileGrid Files="@files" FileRemoved="@RemoveFile" />
 
-    <EventTimeChart EventTimes="@flows.Select(f => f.Time)" />
+<EventTimeChart EventTimes="@flows.Select(f => f.Time)" />
 
-    <FlowDataGrid Flows="@flows" />
-}
+<FlowDataGrid Flows="@flows" />
 
 @code {
-    private List<IBrowserFile> files = new();
-    private bool isLoading = false;
+    private List<LoadedFile> files = new();
     private List<string> errors = new();
     private List<Flow> flows = new();
     private long maxAllowedSize = 1024 * 1024 * 10; // 10 MB
 
     private async Task LoadFilesAsync(InputFileChangeEventArgs e)
     {
-        isLoading = true;
         errors = new();
 
         foreach (var file in e.GetMultipleFiles())
         {
             if (file.ContentType == "application/json")
             {
-                files.Add(file);
-
                 var fileHashCode = file.GetHashCode();
+
+                files.Add(new LoadedFile {
+                    FileName = file.Name,
+                    IsLoading = true,
+                    Size = file.Size,
+                    BrowserFileHashCode = fileHashCode 
+                });
+
                 var readStream = file.OpenReadStream(maxAllowedSize: maxAllowedSize);
                 var flowLogFile = await JsonSerializer.DeserializeAsync<FlowLogFile>(readStream, new JsonSerializerOptions { PropertyNameCaseInsensitive = true });
                 
@@ -66,6 +48,8 @@ else
                 {
                     errors.Add($"File {file.Name} is not a valid FlowLogFile");
                 }
+
+                files.Where(f => f.BrowserFileHashCode == fileHashCode).First().IsLoading = false;
             }
             else 
             {
@@ -74,7 +58,6 @@ else
         }
         
         SendErrorNotifications();
-        isLoading = false;
     }
 
     private void SendErrorNotifications()
@@ -91,10 +74,11 @@ else
         }
     }
 
-    private void RemoveFile(int browserFileHashCode)
+    private void RemoveFile(LoadedFile file)
     {
-        files.RemoveAll(f => f.GetHashCode() == browserFileHashCode);
-        flows.RemoveAll(f => f.BrowserFileHashCode == browserFileHashCode);
+
+        files.RemoveAll(f => f.BrowserFileHashCode == file.BrowserFileHashCode);
+        flows.RemoveAll(f => f.BrowserFileHashCode == file.BrowserFileHashCode);
         StateHasChanged();
     }
 }

@@ -1,0 +1,41 @@
+<div class="container" style="max-width: 100%; padding: 1em;">
+    <div class="row">
+        @foreach (var file in Files)
+        {
+            <div class="col-2">
+                <RadzenCard Style="padding-top: 0.2em; padding-right: 0.2em; padding-bottom: 1.5em;">
+                    <div style="width: 100%;">
+                        <div style="float: right; height: 1em;">
+                            @* <RadzenIcon Icon="clear" Style="vertical-align: top; text-align: right;" @onclick="@(() => FileRemoved.InvokeAsync(file))" /> *@
+                            <RadzenButton Icon="clear" Size="ButtonSize.Small" Click="@(() => FileRemoved.InvokeAsync(file))" ButtonStyle="ButtonStyle.Light" />
+                        </div>
+                    </div>
+                    <div class="@GetFileDivClass(file)">
+                        <div class="file-loading-status-icon text-center">
+                            <div class="spinner-border loading-icon-div" role="status">
+                                <span class="sr-only">Loading...</span>
+                            </div>
+                            <div class="loaded-icon-div">
+                                <RadzenIcon Icon="check_circle" class="loaded-icon" Style="vertical-align: middle;" />
+                            </div>
+                        </div>
+                        <span>@file.FileName</span>
+                    </div>
+                </RadzenCard>
+            </div>
+        }
+    </div>
+</div>
+
+@code {
+    [Parameter]
+    public List<LoadedFile> Files { get; set; } = new();
+
+    [Parameter]
+    public EventCallback<LoadedFile> FileRemoved { get; set; }
+
+    private string GetFileDivClass(LoadedFile file)
+    {
+        return file.IsLoading ? "file-loading" : "file-loaded";
+    }
+}

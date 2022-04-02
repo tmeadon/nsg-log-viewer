@@ -1,0 +1,36 @@
+div.file-loaded .loading-icon-div {
+    display: none;
+}
+
+div.file-loading .loaded-icon-div {
+    display: none;
+}
+
+.file-loading-status-icon {
+    width: 10%;
+    display: table-cell;
+    vertical-align: middle;
+}
+
+div.file-loaded, div.file-loading {
+    display: table;
+    max-height: 25px;
+    padding-right: 1.5em;
+}
+
+div.file-loaded span, div.file-loading span {
+    display: table-cell;
+    vertical-align: middle;
+    text-align: center;
+}
+
+i.loaded-icon {
+    vertical-align: middle;
+}
+
+.loading-icon-div {
+    height: 1.3em;
+    width: 1.3em;
+    margin-top: 10%;
+}
+
