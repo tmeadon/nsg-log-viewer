@@ -1,0 +1,31 @@
+<RadzenChart>
+    <RadzenLineSeries Smooth="true" Data="@timeBins" CategoryProperty="Time" ValueProperty="Count" >
+        <RadzenMarkers MarkerType="MarkerType.Circle" />
+    </RadzenLineSeries>
+    <RadzenCategoryAxis Padding="20" FormatString="{0:yy-MM-dd HH:mm}" />
+    <RadzenLegend Visible="false" />
+</RadzenChart>
+
+@code {
+    [Parameter]
+    public IEnumerable<DateTime>? EventTimes { get; set; }
+
+    private List<TimeBin> timeBins = new();
+
+    private class TimeBin
+    {
+        public DateTime Time { get; init; }
+        public int Count { get; init; }
+    }
+
+    protected override void OnParametersSet()
+    {
+        if (EventTimes != null)
+        {
+            timeBins = EventTimes.GroupBy(s => s.Ticks / TimeSpan.FromMinutes(1).Ticks).Select(g => new TimeBin {
+                Time = g.First(),
+                Count = g.Count()
+            }).ToList();
+        }
+    }
+}

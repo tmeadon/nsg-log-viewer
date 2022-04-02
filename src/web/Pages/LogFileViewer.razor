@@ -29,6 +29,8 @@ else
         }
     </ul>
 
+    <EventTimeChart EventTimes="@flows.Select(f => f.Time)" />
+
     <FlowDataGrid Flows="@flows" />
 }
 
@@ -37,6 +39,7 @@ else
     private bool isLoading = false;
     private List<string> errors = new();
     private List<Flow> flows = new();
+    private long maxAllowedSize = 1024 * 1024 * 10; // 10 MB
 
     private async Task LoadFilesAsync(InputFileChangeEventArgs e)
     {
@@ -49,7 +52,8 @@ else
             {
                 files.Add(file);
 
-                var flowLogFile = await JsonSerializer.DeserializeAsync<FlowLogFile>(file.OpenReadStream(), new JsonSerializerOptions { PropertyNameCaseInsensitive = true });
+                var readStream = file.OpenReadStream(maxAllowedSize: maxAllowedSize);
+                var flowLogFile = await JsonSerializer.DeserializeAsync<FlowLogFile>(readStream, new JsonSerializerOptions { PropertyNameCaseInsensitive = true });
                 
                 if (flowLogFile != null)
                 {
