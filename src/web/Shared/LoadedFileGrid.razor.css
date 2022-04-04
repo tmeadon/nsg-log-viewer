@@ -1,8 +1,12 @@
-div.file-loaded .loading-icon-div {
+div.file-loaded .loading-icon-div, div.file-loaded .loading-failed-icon-div {
     display: none;
 }
 
-div.file-loading .loaded-icon-div {
+div.file-loading .loaded-icon-div, div.file-loading .loading-failed-icon-div {
+    display: none;
+}
+
+div.file-loading-failed .loaded-icon-div, div.file-loading-failed .loading-icon-div {
     display: none;
 }
 
@@ -12,21 +16,17 @@ div.file-loading .loaded-icon-div {
     vertical-align: middle;
 }
 
-div.file-loaded, div.file-loading {
+div.file-loaded, div.file-loading, div.file-loading-failed {
     display: table;
     max-height: 25px;
     padding-right: 1.5em;
 }
 
-div.file-loaded span, div.file-loading span {
+div.file-loaded span, div.file-loading span, div.file-loading-failed span {
     display: table-cell;
     vertical-align: middle;
     text-align: center;
     font-size: 0.8em;
-}
-
-i.loaded-icon {
-    vertical-align: middle;
 }
 
 .loading-icon-div {

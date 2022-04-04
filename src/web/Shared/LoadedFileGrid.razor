@@ -1,3 +1,5 @@
+@inject TooltipService tooltipService
+
 <div class="container" style="max-width: 95%; padding: 1em;">
         <div class="row">
         @for (int i = 0; i <= Files.Count; i += colsPerRow)
@@ -19,6 +21,9 @@
                                 <div class="loaded-icon-div">
                                     <RadzenIcon Icon="check_circle" class="loaded-icon" Style="vertical-align: middle;" />
                                 </div>
+                                <div class="loading-failed-icon-div">
+                                    <RadzenIcon Icon="warning" class="loading-failed-icon" MouseEnter="@(args => ShowToolTip(args, file))" Style="vertical-align: middle;" />
+                                </div>
                             </div>
                             <span>@file.FileName</span>
                         </div>
@@ -39,5 +44,22 @@
 
     private int colsPerRow = 6;
 
-    private string GetFileDivClass(LoadedFile file) => file.IsLoading ? "file-loading" : "file-loaded";
+    private string GetFileDivClass(LoadedFile file)
+    {
+        if (!string.IsNullOrEmpty(file.LoadError))
+            return "file-loading-failed";
+
+        return file.IsLoading ? "file-loading" : "file-loaded";
+    }
+
+    private void ShowToolTip(ElementReference elementReference, LoadedFile file)
+    {
+        if (string.IsNullOrEmpty(file.LoadError))
+            return;
+
+        tooltipService.Open(elementReference, file.LoadError, new TooltipOptions
+        {
+            Style = "background-color: black;"
+        });
+    }
 }
