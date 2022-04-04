@@ -1,0 +1,15 @@
+::deep div span.rz-column-title {
+    text-transform: lowercase !important;
+}
+
+::deep div th.rz-unselectable-text {
+    padding: 0%;
+}
+
+::deep div span.rz-column-title {
+    padding-bottom: 0.3rem !important;
+}
+
+::deep div thead {
+    z-index: unset;
+}
