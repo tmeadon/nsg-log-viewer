@@ -1,4 +1,4 @@
-::deep div span.rz-column-title {
+::deep div span.rz-column-title, ::deep div span.rz-cell-data {
     text-transform: lowercase !important;
 }
 

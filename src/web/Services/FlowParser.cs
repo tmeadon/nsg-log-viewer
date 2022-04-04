@@ -19,9 +19,9 @@ public static class FlowParser
                         var flow = new Flow
                         {
                             Time = record.Time,
-                            MacAddress = record.MacAddress.ToLower(),
-                            NsgName = record.ResourceId.Split('/').Last().ToLower(),
-                            RuleName = perRuleFlow.Rule.ToLower(),
+                            MacAddress = record.MacAddress,
+                            NsgName = record.ResourceId.Split('/').Last(),
+                            RuleName = perRuleFlow.Rule,
                             SourceAddress = thisFlowTuple.SourceAddress,
                             SourcePort = thisFlowTuple.SourcePort,
                             DestinationAddress = thisFlowTuple.DestinationAddress,

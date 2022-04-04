@@ -67,11 +67,11 @@ else
     {
         var fileHashCode = browserFile.GetHashCode();
         var readStream = browserFile.OpenReadStream(maxAllowedSize: maxAllowedSize);
-        var flowLogFile = await JsonSerializer.DeserializeAsync<FlowLogFile>(readStream, new JsonSerializerOptions { PropertyNameCaseInsensitive = true });
+        var flowLogFile = await JsonSerializer.DeserializeAsync<FlowLogFile>(readStream, new JsonSerializerOptions { PropertyNamingPolicy = JsonNamingPolicy.CamelCase });
         
         if (flowLogFile != null && flowLogFile.Records.Count > 0)
         {
-            var fileFlows = await Task.Run(() => FlowParser.Parse(flowLogFile, fileHashCode).OrderBy(f => f.Time));
+            var fileFlows = FlowParser.Parse(flowLogFile, fileHashCode).OrderBy(f => f.Time);
             flows.AddRange(fileFlows);
             files.Where(f => f.BrowserFileHashCode == fileHashCode).ToList().ForEach(f => {
                 f.FirstFlowTime = fileFlows.First().Time;
