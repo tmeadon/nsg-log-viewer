@@ -1,0 +1,36 @@
+div {
+    margin-top: 1.5rem;
+}
+
+::deep div span.rz-cell-data {
+    font-size: 0.8rem;
+}
+
+::deep div div.loading-icon-div {
+    height: 1.0rem;
+    width: 1.0rem;
+    display: block;
+    margin: auto;
+}
+
+::deep div i.loading-failed-icon {
+    vertical-align: middle;
+    padding-right: 5%;
+    margin-left: 2%;
+}
+
+::deep div span.rz-column-title {
+    text-transform: capitalize !important;
+}
+
+::deep div th.rz-unselectable-text {
+    padding: 0%;
+}
+
+::deep div span.rz-column-title {
+    padding-bottom: 0.3rem !important;
+}
+
+::deep div thead {
+    z-index: unset;
+}

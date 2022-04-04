@@ -4,13 +4,11 @@
 
 <PageTitle>File Viewer</PageTitle>
 
-<h1>File Viewer</h1>
-
 <InputFile OnChange="@LoadFilesAsync" multiple>Upload json file(s)</InputFile>
 
 @if (files.Count > 0)
 {
-    <LoadedFileGrid Files="@files" FileRemoved="RemoveFile" />
+    <LoadedFileTable Files="@files" FileRemoved="RemoveFile" />
 
     <EventTimeChart EventTimes="@flows.Select(f => f.Time)" />
 
@@ -33,12 +31,10 @@ else
 
     private async Task LoadFilesAsync(InputFileChangeEventArgs e)
     {
-        errors = new();
         var browserFiles = e.GetMultipleFiles();
-        var filteredFiles = FilterFilesAndNotifyErrors(browserFiles);
-        AddLoadedFiles(filteredFiles);
+        AddLoadedFiles(browserFiles);
 
-        foreach (var file in filteredFiles)
+        foreach (var file in browserFiles)
         {
             if (IsFileJson(file))
             {
@@ -46,17 +42,10 @@ else
             }
             else 
             {
-                errors.Add($"{file.Name} is not a json file");
+                HandleLoadError($"{file.Name} is not a json file", file.GetHashCode());
+                files.RemoveAll(f => f.BrowserFileHashCode == file.GetHashCode());    
             }
-        }
-        
-        SendErrorNotifications();
-    }
-
-    private IEnumerable<IBrowserFile> FilterFilesAndNotifyErrors(IEnumerable<IBrowserFile> files)
-    {
-        files.Where(f => !IsFileJson(f)).ToList().ForEach(f => SendErrorNotification($"{f.Name} is not a json file"));
-        return files.Where(f => IsFileJson(f));
+        }   
     }
 
     private void AddLoadedFiles(IEnumerable<IBrowserFile> browserFiles)
@@ -80,24 +69,27 @@ else
         var readStream = browserFile.OpenReadStream(maxAllowedSize: maxAllowedSize);
         var flowLogFile = await JsonSerializer.DeserializeAsync<FlowLogFile>(readStream, new JsonSerializerOptions { PropertyNameCaseInsensitive = true });
         
-        if (flowLogFile != null)
+        if (flowLogFile != null && flowLogFile.Records.Count > 0)
         {
-            flows.AddRange(FlowParser.Parse(flowLogFile, fileHashCode));
+            var fileFlows = await Task.Run(() => FlowParser.Parse(flowLogFile, fileHashCode).OrderBy(f => f.Time));
+            flows.AddRange(fileFlows);
+            files.Where(f => f.BrowserFileHashCode == fileHashCode).ToList().ForEach(f => {
+                f.FirstFlowTime = fileFlows.First().Time;
+                f.LastFlowTime = fileFlows.Last().Time;
+                f.FlowCount = fileFlows.Count();
+                f.IsLoading = false;               
+            });
         }
         else
         {
-            errors.Add($"File {browserFile.Name} is not a valid FlowLogFile");
+            HandleLoadError($"File {browserFile.Name} does not contain any flow records", fileHashCode);
         }
-
-        files.Where(f => f.BrowserFileHashCode == fileHashCode).First().IsLoading = false;
     }
 
-    private void SendErrorNotifications()
+    private void HandleLoadError(string error, int fileHashCode)
     {
-        foreach (var error in errors)
-        {
-            SendErrorNotification(error);
-        }
+        files.Where(f => f.BrowserFileHashCode == fileHashCode).First().LoadError = error;
+        SendErrorNotification(error);                
     }
 
     private void SendErrorNotification(string error)

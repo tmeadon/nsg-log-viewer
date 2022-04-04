@@ -62,7 +62,3 @@ a, .btn-link {
     .blazor-error-boundary::after {
         content: "An error has occurred."
     }
-
-.flow-log-table span.rz-column-title, .flow-log-table span.rz-cell-data {
-    text-transform: lowercase !important;
-}

@@ -1,0 +1,79 @@
+@inject TooltipService tooltipService;
+
+<div>
+    <RadzenDataGrid @ref="grid" AllowColumnResize="true" AllowSorting="true" PageSize="50" AllowPaging="true"
+        PagerHorizontalAlign="HorizontalAlign.Left" ShowPagingSummary="true" Data="@Files" TItem="LoadedFile" >
+        <Columns>
+            <RadzenDataGridColumn TItem="LoadedFile" Title="File name">
+                <Template Context="file">
+                    @if (!string.IsNullOrEmpty(file.LoadError))
+                    {
+                        <RadzenIcon Icon="error" class="loading-failed-icon" MouseEnter="@(args => ShowTooltip(args, file))" />
+                    }
+                    @file.FileName
+                </Template>
+            </RadzenDataGridColumn>
+            <RadzenDataGridColumn TItem="LoadedFile" Title="First flow time">
+                <Template Context="file">
+                    @getLoadedData(file, nameof(LoadedFile.FirstFlowTime))
+                </Template>
+            </RadzenDataGridColumn>
+            <RadzenDataGridColumn TItem="LoadedFile" Title="Last flow time">
+                <Template Context="file">
+                    @getLoadedData(file, nameof(LoadedFile.FirstFlowTime))
+                </Template>
+            </RadzenDataGridColumn>
+            <RadzenDataGridColumn TItem="LoadedFile" Property="FlowCount" Title="Flow count">
+                <Template Context="file">
+                    @getLoadedData(file, nameof(LoadedFile.FlowCount))
+                </Template>
+            </RadzenDataGridColumn>
+            <RadzenDataGridColumn TItem="LoadedFile" Property="Size" Title="File size" />
+            <RadzenDataGridColumn TItem="LoadedFile" Title="" Sortable="false" Width="40px">
+                <Template Context="file">
+                    <RadzenButton Icon="clear" Size="ButtonSize.Small" Click="@(() => FileRemoved.InvokeAsync(@file))" ButtonStyle="ButtonStyle.Danger" />
+                    <RadzenButton Icon="clear" Size="ButtonSize.Small" Click="@(() => FileRemoved.InvokeAsync(@file))" ButtonStyle="ButtonStyle.Danger" />
+                </Template>
+            </RadzenDataGridColumn>
+        </Columns>
+    </RadzenDataGrid>
+</div>
+
+@code {
+    [Parameter]
+    public List<LoadedFile> Files { get; set; } = new();
+
+    [Parameter]
+    public EventCallback<LoadedFile> FileRemoved { get; set; }
+
+    private RadzenDataGrid<LoadedFile> grid = new RadzenDataGrid<LoadedFile>();
+    private RenderFragment loadingIcon = @<div class="spinner-border loading-icon-div" role="status"><span class="sr-only">Loading...</span></div>;
+
+    protected override void OnParametersSet()
+    {
+        grid.Reload();
+    }
+
+    private RenderFragment getLoadedData(LoadedFile file, string propertyName)
+    {
+        if (file.IsLoading)
+        {
+            return loadingIcon;
+        }
+        else
+        {
+            return @<span>@file.GetType().GetProperty(propertyName)?.GetValue(file)</span>;
+        }
+    }
+
+    private void ShowTooltip(ElementReference elementReference, LoadedFile file)
+    {
+        if (string.IsNullOrEmpty(file.LoadError))
+            return;
+
+        tooltipService.Open(elementReference, file.LoadError, new TooltipOptions
+        {
+            Style = "background-color: black;"
+        });
+    }
+}
