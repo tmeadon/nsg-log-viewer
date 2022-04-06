@@ -1,6 +1,7 @@
 @using System.Text.Json;
 @page "/fileviewer"
 @inject NotificationService notificationService
+@inject DialogService dialogService
 
 <PageTitle>File Viewer</PageTitle>
 
@@ -31,21 +32,28 @@ else
 
     private async Task LoadFilesAsync(InputFileChangeEventArgs e)
     {
+        ShowBusyDialog();
         var browserFiles = e.GetMultipleFiles();
         AddLoadedFiles(browserFiles);
 
         foreach (var file in browserFiles)
         {
-            if (IsFileJson(file))
-            {
-                await LoadFileAsync(file);
-            }
-            else 
-            {
-                HandleLoadError($"{file.Name} is not a json file", file.GetHashCode());
-                files.RemoveAll(f => f.BrowserFileHashCode == file.GetHashCode());    
-            }
+            await LoadFileAsync(file);
         }   
+
+        CloseBusyDialogIfAllFilesHaveLoaded();
+    }
+
+    private void ShowBusyDialog()
+    {
+        dialogService.OpenAsync("", ds => 
+            @<div>
+                <div class="row">
+                    <div class="col-md-12">
+                        Loading...
+                    </div>
+                </div>
+        </div>, new DialogOptions() { ShowTitle = false, Style = "min-height:auto;min-width:auto;width:auto" });
     }
 
     private void AddLoadedFiles(IEnumerable<IBrowserFile> browserFiles)
@@ -61,24 +69,32 @@ else
         }
     }
 
+    private async Task LoadFileAsync(IBrowserFile file)
+    {
+        if (IsFileJson(file))
+        {
+            await DeserializeAndParseFileAsync(file);
+            StateHasChanged();
+        }
+        else
+        {
+            HandleLoadError($"{file.Name} is not a json file", file.GetHashCode());
+            files.RemoveAll(f => f.BrowserFileHashCode == file.GetHashCode());
+        }
+    }
+
     private bool IsFileJson(IBrowserFile file) => file.ContentType == "application/json";
 
-    private async Task LoadFileAsync(IBrowserFile browserFile)
+    private async Task DeserializeAndParseFileAsync(IBrowserFile browserFile)
     {
         var fileHashCode = browserFile.GetHashCode();
-        var readStream = browserFile.OpenReadStream(maxAllowedSize: maxAllowedSize);
-        var flowLogFile = await JsonSerializer.DeserializeAsync<FlowLogFile>(readStream, new JsonSerializerOptions { PropertyNamingPolicy = JsonNamingPolicy.CamelCase });
+        var flowLogFile = await DeserializeFileAsync(browserFile);
         
         if (flowLogFile != null && flowLogFile.Records.Count > 0)
         {
             var fileFlows = FlowParser.Parse(flowLogFile, fileHashCode).OrderBy(f => f.Time);
             flows.AddRange(fileFlows);
-            files.Where(f => f.BrowserFileHashCode == fileHashCode).ToList().ForEach(f => {
-                f.FirstFlowTime = fileFlows.First().Time;
-                f.LastFlowTime = fileFlows.Last().Time;
-                f.FlowCount = fileFlows.Count();
-                f.IsLoading = false;               
-            });
+            UpdateLoadedFile(fileFlows, fileHashCode);              
         }
         else
         {
@@ -86,9 +102,26 @@ else
         }
     }
 
+    private async Task<FlowLogFile?> DeserializeFileAsync(IBrowserFile browserFile)
+    {
+        var readStream = browserFile.OpenReadStream(maxAllowedSize: maxAllowedSize);
+        return await JsonSerializer.DeserializeAsync<FlowLogFile>(readStream, new JsonSerializerOptions { PropertyNamingPolicy = JsonNamingPolicy.CamelCase });
+    }
+
+    private void UpdateLoadedFile(IEnumerable<Flow> fileFlows, int fileHashCode)
+    {
+        var parsedFile = files.Where(f => f.BrowserFileHashCode == fileHashCode).First();
+        parsedFile.FirstFlowTime = fileFlows.First().Time;
+        parsedFile.LastFlowTime = fileFlows.Last().Time;
+        parsedFile.FlowCount = fileFlows.Count();
+        parsedFile.IsLoading = false;
+    }
+
     private void HandleLoadError(string error, int fileHashCode)
     {
-        files.Where(f => f.BrowserFileHashCode == fileHashCode).First().LoadError = error;
+        var file = files.Where(f => f.BrowserFileHashCode == fileHashCode).First();
+        file.LoadError = error;
+        file.IsLoading = false;
         SendErrorNotification(error);                
     }
 
@@ -109,5 +142,14 @@ else
         files.RemoveAll(f => f.BrowserFileHashCode == file.BrowserFileHashCode);
         flows.RemoveAll(f => f.BrowserFileHashCode == file.BrowserFileHashCode);
         StateHasChanged();
+    }
+
+    private void CloseBusyDialogIfAllFilesHaveLoaded()
+    {
+        if (files.All(f => !f.IsLoading))
+        {
+            Console.WriteLine("dialog close");
+            dialogService.Close();
+        }
     }
 }
