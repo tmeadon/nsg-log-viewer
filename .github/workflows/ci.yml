@@ -22,4 +22,4 @@ jobs:
     - name: Build
       run: dotnet build --no-restore ./src/web/NsgLogViewer.csproj
     - name: Test
-      run: dotnet test --no-build --verbosity normal ./src/web/NsgLogViewer.csproj
+      run: dotnet test --verbosity normal ./test/unit/NsgLogViewer.UnitTests.csproj
