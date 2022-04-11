@@ -1,4 +1,3 @@
-@using System.Text.Json;
 @page "/fileviewer"
 @inject NotificationService notificationService
 @inject DialogService dialogService
@@ -28,7 +27,7 @@ else
     private List<LoadedFile> files = new List<LoadedFile>();
     private List<string> errors = new();
     private List<Flow> flows = new();
-    private long maxAllowedSize = 1024 * 1024 * 10; // 10 MB
+    private FlowLogFileParser flowLogFileParser = new();
 
     private async Task LoadFilesAsync(InputFileChangeEventArgs e)
     {
@@ -38,7 +37,7 @@ else
 
         foreach (var file in browserFiles)
         {
-            await LoadFileAsync(file);
+            await TryLoadFileAsync(file);
         }   
 
         CloseBusyDialogIfAllFilesHaveLoaded();
@@ -69,43 +68,30 @@ else
         }
     }
 
+    private async Task TryLoadFileAsync(IBrowserFile file)
+    {
+        try
+        {
+            await LoadFileAsync(file);
+        }
+        catch (BrowserFileLoaderException ex)
+        {
+            HandleLoadError(ex.Message, file.GetHashCode());
+        }
+        catch (Exception ex)
+        {
+            HandleLoadError("An unknown error occurred while loading the file.", file.GetHashCode());
+            Console.WriteLine(ex.Message);
+        }
+    }
+
     private async Task LoadFileAsync(IBrowserFile file)
     {
-        if (IsFileJson(file))
-        {
-            await DeserializeAndParseFileAsync(file);
-            StateHasChanged();
-        }
-        else
-        {
-            HandleLoadError($"{file.Name} is not a json file", file.GetHashCode());
-            files.RemoveAll(f => f.BrowserFileHashCode == file.GetHashCode());
-        }
-    }
-
-    private bool IsFileJson(IBrowserFile file) => file.ContentType == "application/json";
-
-    private async Task DeserializeAndParseFileAsync(IBrowserFile browserFile)
-    {
-        var fileHashCode = browserFile.GetHashCode();
-        var flowLogFile = await DeserializeFileAsync(browserFile);
-        
-        if (flowLogFile != null && flowLogFile.Records.Count > 0)
-        {
-            var fileFlows = FlowParser.Parse(flowLogFile, fileHashCode).OrderBy(f => f.Time);
-            flows.AddRange(fileFlows);
-            UpdateLoadedFile(fileFlows, fileHashCode);              
-        }
-        else
-        {
-            HandleLoadError($"File {browserFile.Name} does not contain any flow records", fileHashCode);
-        }
-    }
-
-    private async Task<FlowLogFile?> DeserializeFileAsync(IBrowserFile browserFile)
-    {
-        var readStream = browserFile.OpenReadStream(maxAllowedSize: maxAllowedSize);
-        return await JsonSerializer.DeserializeAsync<FlowLogFile>(readStream, new JsonSerializerOptions { PropertyNamingPolicy = JsonNamingPolicy.CamelCase });
+        var fileLoader = new BrowserFileLoader(file, flowLogFileParser);
+        var loadedFlows = await fileLoader.LoadAsync();
+        flows.AddRange(loadedFlows);
+        UpdateLoadedFile(loadedFlows, file.GetHashCode());
+        StateHasChanged();
     }
 
     private void UpdateLoadedFile(IEnumerable<Flow> fileFlows, int fileHashCode)

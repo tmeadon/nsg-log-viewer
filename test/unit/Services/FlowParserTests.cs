@@ -15,7 +15,8 @@ public class FlowParserTests
     {
         var flows = DummyFlowGenerator.GenerateDummyFlows(10, dummyBrowserFileHashCode);
         var flowLogFile = DummyFlowLogFileBuilder.Build(flows);
-        var result = FlowParser.Parse(flowLogFile, dummyBrowserFileHashCode);
+        var parser = new FlowLogFileParser();
+        var result = parser.Parse(flowLogFile, dummyBrowserFileHashCode);
         Assert.Equal<Flow>(flows, result, new FlowComparer());
     }
 }

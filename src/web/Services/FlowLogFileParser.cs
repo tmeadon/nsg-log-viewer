@@ -1,8 +1,8 @@
 namespace NsgLogViewer.Services;
 
-public static class FlowParser
+public class FlowLogFileParser
 {
-    public static IEnumerable<Flow> Parse(FlowLogFile flowLogFile, int? browserFileHashCode)
+    public virtual IEnumerable<Flow> Parse(FlowLogFile flowLogFile, int? browserFileHashCode)
     {
         var flows = new List<Flow>();
 
