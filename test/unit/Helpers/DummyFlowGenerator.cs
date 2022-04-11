@@ -9,7 +9,7 @@ public static class DummyFlowGenerator
 {
     private static Random random = new Random();
 
-    public static IEnumerable<Flow> GenerateDummyFlows(int count, int dummyBrowserFileHashCode)
+    public static IEnumerable<Flow> Generate(int count, int dummyBrowserFileHashCode)
     {
         var flows = new List<Flow>();
 

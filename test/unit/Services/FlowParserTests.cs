@@ -13,7 +13,7 @@ public class FlowParserTests
     [Fact]
     public void FlowParserCorrectlyParsesFlowLogFile()
     {
-        var flows = DummyFlowGenerator.GenerateDummyFlows(10, dummyBrowserFileHashCode);
+        var flows = DummyFlowGenerator.Generate(10, dummyBrowserFileHashCode);
         var flowLogFile = DummyFlowLogFileBuilder.Build(flows);
         var parser = new FlowLogFileParser();
         var result = parser.Parse(flowLogFile, dummyBrowserFileHashCode);

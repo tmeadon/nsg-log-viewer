@@ -18,7 +18,7 @@ public class BrowserFileLoaderTests
 
     public BrowserFileLoaderTests()
     {
-        dummyFlows = DummyFlowGenerator.GenerateDummyFlows(10, dummyBrowserFileHashCode);
+        dummyFlows = DummyFlowGenerator.Generate(10, dummyBrowserFileHashCode);
         flowLogFileParserFake = BuildFlowLogFileParserFake(dummyFlows);
     }
 
@@ -44,7 +44,7 @@ public class BrowserFileLoaderTests
 
         var browserFileLoader = new BrowserFileLoader(browserFile, flowLogFileParserFake);
 
-        await Assert.ThrowsAsync<BrowserFileLoaderException>(() => browserFileLoader.LoadBrowserFileAsync());
+        await Assert.ThrowsAsync<BrowserFileLoaderException>(() => browserFileLoader.LoadAsync());
     }
 
     [Fact]
@@ -54,7 +54,7 @@ public class BrowserFileLoaderTests
         var browserFile = BuildBrowserFileFake("test.json", "application/json", DateTimeOffset.Now, 123, dummyFlowLogFile);
         var browserFileLoader = new BrowserFileLoader(browserFile, flowLogFileParserFake);
     
-        await Assert.ThrowsAsync<BrowserFileLoaderException>(() => browserFileLoader.LoadBrowserFileAsync());
+        await Assert.ThrowsAsync<BrowserFileLoaderException>(() => browserFileLoader.LoadAsync());
     }
 
     [Fact]
@@ -64,7 +64,7 @@ public class BrowserFileLoaderTests
         var browserFile = BuildBrowserFileFake("test.json", "application/json", DateTimeOffset.Now, 123, dummyFlowLogFile);
         var browserFileLoader = new BrowserFileLoader(browserFile, flowLogFileParserFake);
 
-        await browserFileLoader.LoadBrowserFileAsync();
+        await browserFileLoader.LoadAsync();
 
         Assert.True(flowLogFileParserFake.WasCalled);
         Assert.Equal<FlowLogFile>(dummyFlowLogFile, flowLogFileParserFake.FlowLogFileCalledWith, new FlowLogFileComparer());
@@ -78,7 +78,7 @@ public class BrowserFileLoaderTests
         var browserFile = BuildBrowserFileFake("test.json", "application/json", DateTimeOffset.Now, 123, dummyFlowLogFile);
         var browserFileLoader = new BrowserFileLoader(browserFile, flowLogFileParserFake);
 
-        var result = await browserFileLoader.LoadBrowserFileAsync();
+        var result = await browserFileLoader.LoadAsync();
 
         Assert.Equal<Flow>(dummyFlows, result, new FlowComparer());
     }
