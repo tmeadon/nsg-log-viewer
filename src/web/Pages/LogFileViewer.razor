@@ -6,9 +6,9 @@
 
 <InputFile OnChange="@LoadFilesAsync" multiple>Upload json file(s)</InputFile>
 
-@if (files.Count > 0)
+@if (loadedFileManager.LoadedFiles.Count > 0)
 {
-    <LoadedFileTable Files="@files" FileRemoved="RemoveFile" />
+    <LoadedFileTable Files="@loadedFileManager.LoadedFiles" FileRemoved="RemoveFile" />
 
     <EventTimeChart EventTimes="@flows.Select(f => f.Time)" />
 
@@ -24,22 +24,17 @@ else
 }
 
 @code {
-    private List<LoadedFile> files = new List<LoadedFile>();
     private List<string> errors = new();
     private List<Flow> flows = new();
     private FlowLogFileParser flowLogFileParser = new();
+    private LoadedFileManager loadedFileManager = new();
 
     private async Task LoadFilesAsync(InputFileChangeEventArgs e)
     {
         ShowBusyDialog();
         var browserFiles = e.GetMultipleFiles();
         AddLoadedFiles(browserFiles);
-
-        foreach (var file in browserFiles)
-        {
-            await TryLoadFileAsync(file);
-        }   
-
+        await TryLoadFilesAsync(browserFiles);
         CloseBusyDialogIfAllFilesHaveLoaded();
     }
 
@@ -59,12 +54,15 @@ else
     {
         foreach (var file in browserFiles)
         {
-            files.Add(new LoadedFile {
-                FileName = file.Name,
-                IsLoading = true,
-                Size = file.Size,
-                BrowserFileHashCode = file.GetHashCode()
-            });
+            loadedFileManager.StartLoad(file);
+        }
+    }
+
+    private async Task TryLoadFilesAsync(IEnumerable<IBrowserFile> browserFiles)
+    {
+        foreach (var file in browserFiles)
+        {
+            await TryLoadFileAsync(file);
         }
     }
 
@@ -90,24 +88,13 @@ else
         var fileLoader = new BrowserFileLoader(file, flowLogFileParser);
         var loadedFlows = await fileLoader.LoadAsync();
         flows.AddRange(loadedFlows);
-        UpdateLoadedFile(loadedFlows, file.GetHashCode());
+        loadedFileManager.FinishLoad(file.GetHashCode(), loadedFlows);
         StateHasChanged();
-    }
-
-    private void UpdateLoadedFile(IEnumerable<Flow> fileFlows, int fileHashCode)
-    {
-        var parsedFile = files.Where(f => f.BrowserFileHashCode == fileHashCode).First();
-        parsedFile.FirstFlowTime = fileFlows.First().Time;
-        parsedFile.LastFlowTime = fileFlows.Last().Time;
-        parsedFile.FlowCount = fileFlows.Count();
-        parsedFile.IsLoading = false;
     }
 
     private void HandleLoadError(string error, int fileHashCode)
     {
-        var file = files.Where(f => f.BrowserFileHashCode == fileHashCode).First();
-        file.LoadError = error;
-        file.IsLoading = false;
+        loadedFileManager.HandleLoadError(fileHashCode, error);
         SendErrorNotification(error);                
     }
 
@@ -124,17 +111,15 @@ else
 
     private void RemoveFile(LoadedFile file)
     {
-
-        files.RemoveAll(f => f.BrowserFileHashCode == file.BrowserFileHashCode);
+        loadedFileManager.RemoveLoadedFile(file.BrowserFileHashCode);
         flows.RemoveAll(f => f.BrowserFileHashCode == file.BrowserFileHashCode);
         StateHasChanged();
     }
 
     private void CloseBusyDialogIfAllFilesHaveLoaded()
     {
-        if (files.All(f => !f.IsLoading))
+        if (loadedFileManager.LoadedFiles.All(f => !f.IsLoading))
         {
-            Console.WriteLine("dialog close");
             dialogService.Close();
         }
     }
