@@ -1,0 +1,85 @@
+@page "/browser"
+@using Azure.Storage
+@using Azure.Storage.Blobs;
+@using Azure.Storage.Blobs.Models;
+@using Azure.Storage.Blobs.Specialized;
+
+
+<RadzenTextBox Placeholder="Enter SAS token" @bind-Value=@sasUri style="width: 90%"></RadzenTextBox>
+<div>
+    <RadzenButton Click=@ListContainersAsync>List containers</RadzenButton>
+    <RadzenButton Click=@ListFlowLogBlobsAsync>List blobs</RadzenButton>
+</div>
+<RadzenDataGrid @ref="grid" AllowFiltering="true" AllowColumnResize="true" FilterMode="FilterMode.Advanced" AllowSorting="true"
+    PageSize="50" AllowPaging="true" PagerHorizontalAlign="HorizontalAlign.Left" ShowPagingSummary="true" Data="@blobs"
+    TItem="FlowLogBlob" ColumnWidth="300px" LogicalFilterOperator="LogicalFilterOperator.And" AllowColumnReorder="true"
+    FilterCaseSensitivity="FilterCaseSensitivity.CaseInsensitive" class="flow-log-table" AllowMultiColumnSorting="false" >
+    <Columns>
+        <RadzenDataGridColumn TItem="FlowLogBlob" Property="Nsg.SubscriptionId" Title="NsgSubscriptonId" />
+        <RadzenDataGridColumn TItem="FlowLogBlob" Property="Nsg.ResourceGroupName" Title="NsgResourceGroup" />
+        <RadzenDataGridColumn TItem="FlowLogBlob" Property="Nsg.Name" Title="NsgName" />
+        <RadzenDataGridColumn TItem="FlowLogBlob" Property="StartTimeUTC" Title="StartTime" />
+        <RadzenDataGridColumn TItem="FlowLogBlob" Property="MacAddress" Title="Mac" />
+        <RadzenDataGridColumn TItem="FlowLogBlob" Property="LastModifiedUTC" Title="LastModified" />
+    </Columns>
+</RadzenDataGrid>
+
+@code {
+
+    private string sasUri = "";
+
+    private BlobServiceClient? blobServiceClient;
+
+    private string flowLogContainerName = "insights-logs-networksecuritygroupflowevent";
+
+    private List<FlowLogBlob> blobs = new List<FlowLogBlob>();
+
+    private RadzenDataGrid<FlowLogBlob>? grid = new RadzenDataGrid<FlowLogBlob>();
+
+    private async Task ListContainersAsync()
+    {
+        if (string.IsNullOrEmpty(sasUri))
+        {
+            return;
+        }
+
+        if (blobServiceClient == null)
+        {
+            blobServiceClient = new BlobServiceClient(new Uri(sasUri));
+        }
+
+        await foreach (var container in blobServiceClient.GetBlobContainersAsync())
+        {
+            Console.WriteLine(container.Name);
+        }
+    }
+
+    private async Task ListFlowLogBlobsAsync()
+    {
+        blobs = new List<FlowLogBlob>();
+        
+        if (string.IsNullOrEmpty(sasUri))
+        {
+            return;
+        }
+
+        if (blobServiceClient == null)
+        {
+            blobServiceClient = new BlobServiceClient(new Uri(sasUri));
+        }
+
+        var containerClient = blobServiceClient.GetBlobContainerClient(flowLogContainerName);
+
+        await foreach (var blobItem in containerClient.GetBlobsAsync())
+        {
+            var parser = new BlobNameParser(blobItem.Name);
+            var blob = parser.Parse();
+            blob.LastModifiedUTC = blobItem.Properties.LastModified;
+            blobs.Add(blob);
+            Console.WriteLine(blob);
+        }
+
+        grid?.Reload();
+    }
+
+}
