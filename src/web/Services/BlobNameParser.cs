@@ -28,7 +28,7 @@ public class BlobNameParser
     {
         var regex = new Regex(nsgPattern, RegexOptions.IgnoreCase);
         var match = regex.Match(blobName);
-        return match.Success ? GetNsgFromMatch(match) : throw new Exception($"Could not parse blob name {blobName}");
+        return match.Success ? GetNsgFromMatch(match) : throw new BlobNameParseException(blobName);
     }
 
     private Nsg GetNsgFromMatch(Match match)
@@ -45,7 +45,7 @@ public class BlobNameParser
     {
         var regex = new Regex(startTimePattern, RegexOptions.IgnoreCase);
         var match = regex.Match(blobName);
-        return match.Success ? GetStartTimeFromMatch(match) : throw new Exception($"Could not parse blob name {blobName}");
+        return match.Success ? GetStartTimeFromMatch(match) : throw new BlobNameParseException(blobName);
     }
 
     private DateTime GetStartTimeFromMatch(Match match)
@@ -64,13 +64,13 @@ public class BlobNameParser
     {
         var regex = new Regex(macAddressPattern, RegexOptions.IgnoreCase);
         var match = regex.Match(blobName);
-        return match.Success ? match.Groups[1].Value : throw new Exception($"Could not parse blob name {blobName}");
+        return match.Success ? match.Groups[1].Value : throw new BlobNameParseException(blobName);
     }
 }
 
 public class BlobNameParseException : Exception
 {
-    public BlobNameParseException(string message) : base(message)
+    public BlobNameParseException(string blobName) : base($"Could not parse blob name: {blobName}")
     {
     }
 }
