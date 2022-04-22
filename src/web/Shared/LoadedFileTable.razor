@@ -46,12 +46,12 @@
     [Parameter]
     public EventCallback<LoadedFile> FileRemoved { get; set; }
 
-    private RadzenDataGrid<LoadedFile> grid = new RadzenDataGrid<LoadedFile>();
+    private RadzenDataGrid<LoadedFile>? grid = new RadzenDataGrid<LoadedFile>();
     private RenderFragment loadingIcon = @<div class="spinner-border loading-icon-div" role="status"><span class="sr-only">Loading...</span></div>;
 
     protected override void OnParametersSet()
     {
-        grid.Reload();
+        grid?.Reload();
     }
 
     private RenderFragment getLoadedData(LoadedFile file, string propertyName)

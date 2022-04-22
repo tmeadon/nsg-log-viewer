@@ -21,10 +21,10 @@
     [Parameter]
     public List<Flow> Flows { get; set; } = new();
     
-    private RadzenDataGrid<Flow> grid = new RadzenDataGrid<Flow>();
+    private RadzenDataGrid<Flow>? grid = new RadzenDataGrid<Flow>();
 
     protected override void OnParametersSet()
     {
-        grid.Reload();
+        grid?.Reload();
     }
 }
